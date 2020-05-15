@@ -1,0 +1,58 @@
+package concstore
+
+import (
+	"sync"
+	"sync/atomic"
+)
+
+// Storage is a concurrent key-value in-memory memory storage.
+type Storage struct {
+	counter uint64
+	maxval  uint64
+	empty   uint64
+	mutex   sync.Mutex
+	data    []interface{}
+}
+
+// NewStorage returns a new storage with initial size.
+func NewStorage(size uint64) *Storage {
+	s := Storage{}
+	s.data = make([]interface{}, size)
+	s.maxval = size
+	return &s
+}
+
+// Add obj to the storage, return the object's key as uint64.
+func (s *Storage) Add(obj interface{}) uint64 {
+	if atomic.LoadUint64(&(s.counter)) > atomic.LoadUint64(&(s.maxval)) {
+		s.mutex.Lock()
+		s.data = append(s.data, make([]interface{}, s.maxval)...)
+		s.maxval = s.maxval * 2
+		s.mutex.Unlock()
+	}
+	c := atomic.LoadUInt64(&(s.counter))
+	s.data[c] = obj
+	atomic.AddUint64(&(s.counter), 1)
+	return c
+}
+
+// Get the object by key.
+func (s *Storage) Get(key uint64) interface{} {
+	return s.data[key]
+}
+
+// Remove the object with given key, which means that the slot will be nil.
+func (s *Storage) Remove(key uint64) interface{} {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	s.data[key] = nil
+}
+
+// Free the memory for the storage.
+func (s *Storage) Free() {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	for i := range s.data {
+		s.data[i] = nil
+	}
+}
