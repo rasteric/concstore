@@ -11,8 +11,8 @@ type Storage struct {
 	mutex sync.Mutex
 }
 
-// NewStorage returns a new storage with initial size.
-func NewStorage() *Storage {
+// New returns a new storage with initial size.
+func New() *Storage {
 	s := Storage{}
 	return &s
 }
