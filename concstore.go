@@ -40,3 +40,10 @@ func (s *Storage) Free() {
 		return true
 	})
 }
+
+// Range over all values until the function returns false.
+func (s *Storage) Range(f func(k uint64, v interface{}) bool) {
+	s.data.Range(func(k, v interface{}) bool {
+		return f(k.(uint64), v)
+	})
+}
